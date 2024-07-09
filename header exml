@@ -1,0 +1,82 @@
+<!doctype html>
+<html 
+  <?php language_attributes(); ?> 
+  <?php add_theme_scripts(); ?> class="no-js">
+<head>
+  <link href='https://fonts.googleapis.com/css?family=Libre Baskerville' rel='stylesheet'>
+	<meta charset="<?php bloginfo( 'charset' ); ?>" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<?php wp_head(); ?>
+</head>
+
+<body <?php body_class((is_front_page() ? 'container-fluid p-0 m-0 d-flex flex-column h-100 main-bg-color overflow-x-custom home-page-cover' : 'container-fluid p-0 m-0 d-flex flex-column h-100 main-bg-color overflow-x-custom')); ?>>
+
+<header class="header-font work-sans">
+
+  <nav class="navbar fixed-top navbar-expand-lg main-bg-color p-3">
+    <div class="col-lg-2 col-md-4 col-4 d-flex justify-content-center justify-content-lg-start second">
+      <a class="text-decoration-none" href="<?php echo esc_url( get_permalink(9) ); ?>">
+        <img src="<?php echo esc_url( get_stylesheet_directory_uri() ); ?>/img/site_logo.webp" class="ps-2 me-2 img-fluid" width="100" height="20" alt="Logo">
+      </a>
+    </div>  
+      
+    <div class="col-md-4 col-4 d-lg-none d-xl-block d-xl-none">
+      <button id="toggleButton" class="navbar-toggler first" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon header-font"></span>
+      </button>
+    </div>
+
+    <div class="collapse navbar-collapse col-lg-8 col-md-4 col-4 fourth" id="navbarSupportedContent">
+      <?php wp_nav_menu(array(
+        'theme_location' => 'main-menu',
+        'container' => false,
+        'menu_class' => 'navbar-nav m-auto ps-2 mb-2 mb-md-0',
+        'fallback_cb' => '__return_false',
+        'items_wrap' => '<ul id="%1$s" class="%2$s">%3$s</ul>',
+        'depth' => 2,
+        'walker' => new bootstrap_5_wp_nav_menu_walker()
+      )); ?>
+    </div>
+
+    <div id="rightColumn" class="row col-lg-2 col-md-4 col-4 third">
+      <div class="d-flex justify-content-end">
+        <div href="#" data-bs-toggle="modal" data-bs-target="#fullscreenModal">
+          <?php dynamic_sidebar('header-block-1'); ?>
+        </div>
+          
+        <div class="position-relative px-2">
+          <?php dynamic_sidebar('header-block-2'); ?>
+
+          <?php
+            $cart_count = WC()->cart->get_cart_contents_count();
+
+            if ($cart_count > 0) {
+              echo '<span class="cart-count position-absolute badge rounded-pill">' . esc_html($cart_count) . '</span>';
+            }
+          ?>
+        </div>
+          
+      </div>
+    </div>
+  </nav>
+
+  <div class="modal fade" id="fullscreenModal" tabindex="-1" role="dialog" aria-labelledby="fullscreenModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen modal-dialog-centered work-sans">
+      <div class="modal-content modal-content-fullscreen">
+        <div class="col-12 text-end">
+          <button type="button" class="btn rounded-circle m-2" data-bs-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="col-12 d-flex justify-content-center container mt-5">
+          <div class="col-8 montserrat">
+            <?php echo do_shortcode('[aws_search_form]'); ?>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+
+<main role="main" class="h-100 container-xl main-bg-color p-md-0">
