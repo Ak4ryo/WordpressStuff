@@ -1,0 +1,192 @@
+<?php
+//Load theme CSS and Javascripts
+  function add_theme_scripts() {
+    wp_enqueue_style( 'site_name', get_template_directory_uri().'/style.css' ); 
+    wp_enqueue_style( 'bootstrap', get_template_directory_uri().'/css/bootstrap.min.css' );
+    wp_enqueue_script( 'bootstrap-bundle', 'https://code.jquery.com/jquery-3.6.4.min.js' ,true);
+    wp_enqueue_script( 'bootstrap-bundle', 'https://code.jquery.com/jquery-3.3.1.slim.min.js' ,true);
+    wp_enqueue_script( 'bootstrap-bundle', 'https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js' ,true);
+    wp_enqueue_script( 'bootstrap-scripts', get_template_directory_uri() .'/js/bootstrap.bundle.min.js',true);       
+    // wp_enqueue_script( 'site_name', get_template_directory_uri() . '/js/site_name.js', array('jquery'), '1.0.0 ', true);
+  }
+  add_action( 'wp_enqueue_scripts', 'add_theme_scripts',999 );
+
+  // LOADER
+function display_custom_loader() {
+  ?>
+  <div id="custom-loader" class="loader">
+      <img src="<?php echo esc_url( get_template_directory_uri() . 'gif' ); ?>" alt="Loading...">
+  </div>
+  <?php
+}
+add_action( 'wp_footer', 'display_custom_loader' );
+
+function hide_custom_loader_script() {
+  ?>
+  <script>
+  document.addEventListener("DOMContentLoaded", function() {
+      var loader = document.getElementById("custom-loader");
+      var minLoadingTime = 1000; 
+
+      setTimeout(function() {
+          loader.style.display = "none";
+      }, minLoadingTime);
+  });
+  </script>
+  <?php
+}
+
+add_action('wp_footer', 'hide_custom_loader_script');
+
+  function add_file_types_to_uploads($file_types){
+    $new_filetypes = array();
+    $new_filetypes['svg'] = 'image/svg+xml';
+    $file_types = array_merge($file_types, $new_filetypes );
+    return $file_types;
+  }
+  add_filter('upload_mimes', 'add_file_types_to_uploads');
+
+//  disabled the add to card message
+  add_filter( 'wc_add_to_cart_message_html', '__return_false' );
+
+  function move_single_product_price() {
+    remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_price', 10);
+    add_action('woocommerce_single_product_summary', 'woocommerce_template_single_price', 29);
+  }
+
+  add_action('woocommerce_single_product_summary', 'move_single_product_price', 1);
+
+  /**
+ * Exclude products from a particular category on the shop page
+ */
+function custom_pre_get_posts_query( $q ) {
+
+  $tax_query = (array) $q->get( 'tax_query' );
+
+  $tax_query[] = array(
+    'taxonomy' => 'product_cat-uncategorized', // --> product_cat !change
+    'field' => 'slug',
+    'terms' => array( 'melanin crown' ), // Not display products in the hair products category on the shop page.
+    'operator' => 'NOT IN'
+  );
+
+  $q->set( 'tax_query', $tax_query );
+
+}
+  add_action( 'woocommerce_product_query', 'custom_pre_get_posts_query' ); 
+  add_filter( 'wc_stripe_show_payment_request_on_checkout', '__return_true' );
+
+  function my_register_sidebars() {
+	  /* Register the 'primary' sidebar. */
+    register_sidebar(
+		  array(
+			  'id'            => 'footer-block-1',
+			  'name'          => __( 'Footer Section 1' ),
+			  'description'   => __( '1-st sidebar in footer' ),
+        'before_widget' => '<aside id="%1$s" class="widget %2$s">',
+        'after_widget' => '</aside>',
+        'before_title' => '<h3 class="widget-title">',
+        'after_title' => '</h3>',
+		  )
+	  );
+  }
+  add_action( 'widgets_init', 'my_register_sidebars' );
+
+  // bootstrap 5 wp_nav_menu walker
+  class bootstrap_5_wp_nav_menu_walker extends Walker_Nav_menu  {
+    private $current_item;
+    private $dropdown_menu_alignment_values = [
+      'dropdown-menu-start',
+      'dropdown-menu-end',
+      'dropdown-menu-sm-start',
+      'dropdown-menu-sm-end',
+      'dropdown-menu-md-start',
+      'dropdown-menu-md-end',
+      'dropdown-menu-lg-start',
+      'dropdown-menu-lg-end',
+      'dropdown-menu-xl-start',
+      'dropdown-menu-xl-end',
+      'dropdown-menu-xxl-start',
+      'dropdown-menu-xxl-end'
+    ];
+
+  function start_lvl(&$output, $depth = 0, $args = null)  {
+    $dropdown_menu_class[] = '';
+    foreach($this->current_item->classes as $class) {
+      if(in_array($class, $this->dropdown_menu_alignment_values)) {
+        $dropdown_menu_class[] = $class;
+      }
+    }
+    $indent = str_repeat("\t", $depth);
+    $submenu = ($depth > 0) ? ' sub-menu' : '';
+    $output .= "\n$indent<ul class=\"dropdown-menu$submenu " . esc_attr(implode(" ",$dropdown_menu_class)) . " depth_$depth\">\n";
+  }
+
+  function start_el(&$output, $item, $depth = 0, $args = null, $id = 0) {
+    $this->current_item = $item;
+
+    $indent = ($depth) ? str_repeat("\t", $depth) : '';
+
+    $li_attributes = '';
+    $class_names = $value = '';
+
+    $classes = empty($item->classes) ? array() : (array) $item->classes;
+
+    $classes[] = ($args->walker->has_children) ? 'dropdown' : '';
+    $classes[] = 'nav-item';
+    $classes[] = 'nav-item-' . $item->ID;
+    if ($depth && $args->walker->has_children) {
+      $classes[] = 'dropdown-menu dropdown-menu-end';
+    }
+
+    $class_names =  join(' ', apply_filters('nav_menu_css_class', array_filter($classes), $item, $args));
+    $class_names = ' class="' . esc_attr($class_names) . '"';
+
+    $id = apply_filters('nav_menu_item_id', 'menu-item-' . $item->ID, $item, $args);
+    $id = strlen($id) ? ' id="' . esc_attr($id) . '"' : '';
+
+    $output .= $indent . '<li ' . $id . $value . $class_names . $li_attributes . '>';
+
+    $attributes = !empty($item->attr_title) ? ' title="' . esc_attr($item->attr_title) . '"' : '';
+    $attributes .= !empty($item->target) ? ' target="' . esc_attr($item->target) . '"' : '';
+    $attributes .= !empty($item->xfn) ? ' rel="' . esc_attr($item->xfn) . '"' : '';
+    $attributes .= !empty($item->url) ? ' href="' . esc_attr($item->url) . '"' : '';
+
+    $active_class = ($item->current || $item->current_item_ancestor || in_array("current_page_parent", $item->classes, true) || in_array("current-post-ancestor", $item->classes, true)) ? 'active' : '';
+    $nav_link_class = ( $depth > 0 ) ? 'dropdown-item ' : 'nav-link ';
+    $attributes .= ( $args->walker->has_children ) ? ' class="'. $nav_link_class . $active_class . ' dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"' : ' class="'. $nav_link_class . $active_class . '"';
+
+    $item_output = $args->before;
+    $item_output .= '<a' . $attributes . '>';
+    $item_output .= $args->link_before . apply_filters('the_title', $item->title, $item->ID) . $args->link_after;
+    $item_output .= '</a>';
+    $item_output .= $args->after;
+
+    $output .= apply_filters('walker_nav_menu_start_el', $item_output, $item, $depth, $args);
+  }
+}
+register_nav_menu('main-menu', 'Main menu');
+
+// EXMPL LOADER CSS
+
+.woocommerce .loader::before{
+    display: none !important;
+}
+
+.loader {
+    position: fixed;
+    z-index: 9999;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #F7F0EA;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loader img {
+    width: 100px;
+    height: auto;
+}
